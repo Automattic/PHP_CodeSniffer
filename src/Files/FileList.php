@@ -94,7 +94,11 @@ class FileList implements Iterator, Countable
                 $iterator = new RecursiveIteratorIterator($filter);
 
                 foreach ($iterator as $file) {
-                    $this->files[$file->getPathname()] = null;
+                    if ($file instanceof LocalFile) {
+                        $this->files[$file->getFilename()] = $file;
+                    } else {
+                        $this->files[$file->getPathname()] = null;
+                    }
                 }
             } else {
                 $this->addFile($path);
@@ -134,6 +138,14 @@ class FileList implements Iterator, Countable
         $iterator = new RecursiveIteratorIterator($filter);
 
         foreach ($iterator as $path) {
+            if ($path instanceof LocalFile) {
+                if ($file === null) {
+                    $file = $path;
+                }
+
+                $path = $path->getFilename();
+            }
+
             if (array_key_exists($path, $this->files) === true) {
                 // The path has already been added.
                 continue;
