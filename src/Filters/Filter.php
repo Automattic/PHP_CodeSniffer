@@ -10,12 +10,14 @@
 namespace PHP_CodeSniffer\Filters;
 
 use FilesystemIterator;
+use PHP_CodeSniffer\Files\LocalFile;
 use PHP_CodeSniffer\Config;
 use PHP_CodeSniffer\Ruleset;
 use PHP_CodeSniffer\Util\Common;
 use RecursiveDirectoryIterator;
 use RecursiveFilterIterator;
 use ReturnTypeWillChange;
+use SplFileInfo;
 
 class Filter extends RecursiveFilterIterator
 {
@@ -64,6 +66,15 @@ class Filter extends RecursiveFilterIterator
      */
     protected $acceptedPaths = [];
 
+    /**
+     * Whether to generate LocalFile objects instead of string|SplFileInfo.
+     *
+     * This is intended to be set in subclasses that want that behavior.
+     *
+     * @var boolean
+     */
+    protected $produceLocalFileObjects = false;
+
 
     /**
      * Constructs a filter.
@@ -96,7 +107,7 @@ class Filter extends RecursiveFilterIterator
     #[ReturnTypeWillChange]
     public function accept()
     {
-        $filePath = $this->current();
+        $filePath = $this->getInnerIterator()->current();
         $realPath = Common::realpath($filePath);
 
         if ($realPath !== false) {
@@ -108,7 +119,6 @@ class Filter extends RecursiveFilterIterator
             }
         }
 
-        $filePath = $this->current();
         if (is_dir($filePath) === true) {
             if ($this->config->local === true) {
                 return false;
@@ -128,6 +138,28 @@ class Filter extends RecursiveFilterIterator
 
 
     /**
+     * Map the input string or SplFileInfo into a LocalFile, if desired.
+     *
+     * @return string|SplFileInfo|LocalFile
+     */
+    #[ReturnTypeWillChange]
+    public function current()
+    {
+        if ($this->produceLocalFileObjects === false) {
+            return parent::current();
+        }
+
+        $filePath = (string) parent::current();
+        if (is_dir($filePath) === true) {
+            return $filePath;
+        } else {
+            return new LocalFile($filePath, $this->ruleset, $this->config);
+        }
+
+    }//end current()
+
+
+    /**
      * Returns an iterator for the current entry.
      *
      * Ensures that the ignore patterns are preserved so they don't have
@@ -140,7 +172,7 @@ class Filter extends RecursiveFilterIterator
     {
         $filterClass = get_called_class();
         $children    = new $filterClass(
-            new RecursiveDirectoryIterator($this->current(), (RecursiveDirectoryIterator::SKIP_DOTS | FilesystemIterator::FOLLOW_SYMLINKS)),
+            new RecursiveDirectoryIterator($this->getInnerIterator()->current(), (RecursiveDirectoryIterator::SKIP_DOTS | FilesystemIterator::FOLLOW_SYMLINKS)),
             $this->basedir,
             $this->config,
             $this->ruleset
@@ -160,7 +192,7 @@ class Filter extends RecursiveFilterIterator
      *
      * Checks both file extension filters and path ignore filters.
      *
-     * @param string $path The path to the file being checked.
+     * @param string|SplFileInfo $path The path to the file being checked.
      *
      * @return bool
      */
@@ -197,7 +229,7 @@ class Filter extends RecursiveFilterIterator
     /**
      * Checks filtering rules to see if a path should be ignored.
      *
-     * @param string $path The path to the file or directory being checked.
+     * @param string|SplFileInfo $path The path to the file or directory being checked.
      *
      * @return bool
      */
