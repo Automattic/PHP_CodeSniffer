@@ -1,5 +1,10 @@
 # PHP_CodeSniffer
 
+This is a fork from [PHPCSStandards/PHP_CodeSniffer](https://github.com/PHPCSStandards/PHP_CodeSniffer), created to pick up the changes proposed upstream in [squizlabs/PHP_CodeSniffer#3378](https://github.com/squizlabs/PHP_CodeSniffer/pull/3378).
+If they ever get around to accepting that PR or something similar, this fork will be abandoned.
+
+----
+
 <div aria-hidden="true">
 
 [![Latest Stable Version](https://img.shields.io/packagist/v/squizlabs/php_codesniffer?label=Stable)](https://github.com/PHPCSStandards/PHP_CodeSniffer/releases)
